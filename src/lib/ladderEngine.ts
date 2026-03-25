@@ -17,10 +17,10 @@ export function generateBridges(lineCount: number): Bridge[] {
   const pairCount = lineCount - 1
   const bridgesPerPair = Math.floor(LADDER_CONFIG.BRIDGE_DENSITY)
   const yRange = LADDER_CONFIG.BRIDGE_Y_END - LADDER_CONFIG.BRIDGE_Y_START
-  const globalUsedY: number[] = []
 
   for (let pair = 0; pair < pairCount; pair++) {
     const pairBridgeCount = bridgesPerPair + (Math.random() > 0.5 ? 1 : 0)
+    const pairUsedY: number[] = []
 
     for (let b = 0; b < pairBridgeCount; b++) {
       let attempts = 0
@@ -31,11 +31,11 @@ export function generateBridges(lineCount: number): Bridge[] {
         attempts++
       } while (
         attempts < 50 &&
-        globalUsedY.some((y) => Math.abs(y - yPosition) < LADDER_CONFIG.MIN_BRIDGE_Y_GAP)
+        pairUsedY.some((y) => Math.abs(y - yPosition) < LADDER_CONFIG.MIN_BRIDGE_Y_GAP)
       )
 
       if (attempts < 50) {
-        globalUsedY.push(yPosition)
+        pairUsedY.push(yPosition)
         bridges.push({
           id: `bridge_${pair}_${b}`,
           fromLine: pair,
