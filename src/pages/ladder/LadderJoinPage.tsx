@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react'
 import { useParams } from 'react-router'
 import { motion } from 'framer-motion'
-import { joinRoom, getStoredPlayerId, getRoomOnce } from '../../lib/room'
+import { joinRoom, getStoredPlayerId, getRoomOnce, toStringArray } from '../../lib/room'
 import { generateRandomName } from '../../lib/nameGenerator'
 import { useRoom } from '../../hooks/useRoom'
 import { useLadder } from '../../hooks/useLadder'
@@ -193,10 +193,10 @@ export function LadderJoinPage() {
         />
       )}
 
-      {isFinished && ladder && (ladder.loserIds ?? []).length > 0 && (
+      {isFinished && ladder && toStringArray(ladder.loserIds).length > 0 && (
         <LadderResultPanel
           players={players}
-          loserIds={ladder.loserIds}
+          loserIds={toStringArray(ladder.loserIds)}
         />
       )}
     </div>

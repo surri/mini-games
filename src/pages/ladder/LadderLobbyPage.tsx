@@ -11,7 +11,7 @@ import { LadderBoard } from '../../components/ladder/LadderBoard'
 import { LadderResultPanel } from '../../components/ladder/LadderResultPanel'
 import { CharacterPicker } from '../../components/CharacterPicker'
 import { CHARACTERS } from '../../lib/characters'
-import { getStoredPlayerId } from '../../lib/room'
+import { getStoredPlayerId, toStringArray } from '../../lib/room'
 
 export function LadderLobbyPage() {
   const [roomId, setRoomId] = useState<string | null>(null)
@@ -39,15 +39,20 @@ export function LadderLobbyPage() {
 
   const handleHostJoin = async () => {
     if (!roomId || !hostName.trim()) return
-    await joinRoom(roomId, hostName.trim(), hostChar)
-    setHostJoined(true)
+    try {
+      await joinRoom(roomId, hostName.trim(), hostChar)
+      setHostJoined(true)
+    } catch {
+      // 재시도 가능
+    }
   }
 
   const maxLosers = Math.max(1, playerCount - 1)
+  const clampedLoserCount = Math.min(loserCount, maxLosers)
 
   const handleStart = () => {
     if (playerCount < 2) return
-    startLadder(loserCount)
+    startLadder(clampedLoserCount)
   }
 
   const handlePlayAgain = async () => {
@@ -235,7 +240,7 @@ export function LadderLobbyPage() {
               cursor: playerCount >= 2 ? 'pointer' : 'not-allowed',
             }}
           >
-            {playerCount < 2 ? '2명 이상 필요' : `사다리 시작! (당첨 ${loserCount}명)`}
+            {playerCount < 2 ? '2명 이상 필요' : `사다리 시작! (당첨 ${clampedLoserCount}명)`}
           </motion.button>
         </>
       )}
@@ -250,10 +255,10 @@ export function LadderLobbyPage() {
         />
       )}
 
-      {isFinished && ladder && (ladder.loserIds ?? []).length > 0 && (
+      {isFinished && ladder && toStringArray(ladder.loserIds).length > 0 && (
         <LadderResultPanel
           players={players}
-          loserIds={ladder.loserIds}
+          loserIds={toStringArray(ladder.loserIds)}
           onPlayAgain={handlePlayAgain}
         />
       )}

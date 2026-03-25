@@ -17,23 +17,20 @@ export function useLadderAnimation(
   onFinishedRef.current = onPlayerFinished
 
   const notifiedRef = useRef<Set<string>>(new Set())
-
-  useEffect(() => {
-    for (const pid of startedPlayers) {
-      setAnimStates((prev) => {
-        if (prev[pid]) return prev
-        return { ...prev, [pid]: { progress: 0, startTime: null, done: false } }
-      })
-    }
-  }, [startedPlayers])
+  const allDoneRef = useRef(false)
+  const prevCountRef = useRef(0)
 
   const animate = useCallback((now: number) => {
+    if (allDoneRef.current) return
+
     setAnimStates((prev) => {
       let changed = false
+      let activeCount = 0
       const next = { ...prev }
 
       for (const [pid, state] of Object.entries(next)) {
         if (state.done) continue
+        activeCount++
 
         const startTime = state.startTime ?? now
         if (state.startTime === null) {
@@ -52,11 +49,16 @@ export function useLadderAnimation(
         if (progress >= 1 && !state.done) {
           next[pid] = { ...next[pid], done: true, progress: 1 }
           changed = true
+          activeCount--
           if (!notifiedRef.current.has(pid)) {
             notifiedRef.current.add(pid)
             setTimeout(() => onFinishedRef.current?.(pid), 0)
           }
         }
+      }
+
+      if (activeCount === 0 && Object.keys(next).length > 0) {
+        allDoneRef.current = true
       }
 
       return changed ? next : prev
@@ -66,10 +68,21 @@ export function useLadderAnimation(
   }, [])
 
   useEffect(() => {
-    const hasActive = startedPlayers.length > 0
-    if (hasActive) {
+    const count = startedPlayers.length
+
+    for (const pid of startedPlayers) {
+      setAnimStates((prev) => {
+        if (prev[pid]) return prev
+        return { ...prev, [pid]: { progress: 0, startTime: null, done: false } }
+      })
+    }
+
+    if (count > prevCountRef.current) {
+      prevCountRef.current = count
+      allDoneRef.current = false
       animFrameRef.current = requestAnimationFrame(animate)
     }
+
     return () => {
       if (animFrameRef.current !== null) {
         cancelAnimationFrame(animFrameRef.current)

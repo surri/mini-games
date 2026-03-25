@@ -1,4 +1,4 @@
-import { ref, set, onValue, off, remove, get } from 'firebase/database'
+import { ref, set, onValue, off, remove, get, runTransaction, update } from 'firebase/database'
 import { db } from './firebase'
 import type { Room, RaceRoom, LadderRoom, Player, RoomStatus, RaceState, RacePhase, Obstacle, PlayerEffects, LadderState } from '../types'
 
@@ -162,10 +162,28 @@ export async function updateLadderState(
   roomId: string,
   ladder: Partial<LadderState>
 ): Promise<void> {
-  const ladderRef = ref(db, `rooms/${roomId}/ladder`)
-  const snapshot = await get(ladderRef)
-  const current = snapshot.exists() ? snapshot.val() : {}
-  await set(ladderRef, { ...current, ...ladder })
+  await update(ref(db, `rooms/${roomId}/ladder`), ladder)
+}
+
+export function toStringArray(val: unknown): string[] {
+  if (Array.isArray(val)) return val
+  if (val && typeof val === 'object') return Object.values(val as Record<string, string>)
+  return []
+}
+
+export async function appendToLadderArray(
+  roomId: string,
+  field: 'startedPlayers' | 'finishedPlayers',
+  playerId: string
+): Promise<{ newArray: string[]; length: number }> {
+  const fieldRef = ref(db, `rooms/${roomId}/ladder/${field}`)
+  const { snapshot } = await runTransaction(fieldRef, (current: unknown) => {
+    const arr = toStringArray(current)
+    if (arr.includes(playerId)) return arr
+    return [...arr, playerId]
+  })
+  const newArray = toStringArray(snapshot.val())
+  return { newArray, length: newArray.length }
 }
 
 export async function resetLadder(roomId: string): Promise<void> {

@@ -5,6 +5,7 @@ import {
   getLineX as getLineXNormalized,
   getPositionAtProgress,
 } from '../../lib/ladderEngine'
+import { toStringArray } from '../../lib/room'
 import { LADDER_CONFIG } from '../../lib/ladderConfig'
 import { useLadderAnimation } from '../../hooks/useLadderAnimation'
 import type { Player, LadderState } from '../../types'
@@ -37,8 +38,8 @@ export function LadderBoard({ players, ladder, myPlayerId, onTapCharacter, onPla
     finishedPlayers,
   } = ladder
 
-  const started = startedPlayers ?? []
-  const finished = finishedPlayers ?? []
+  const started = toStringArray(startedPlayers)
+  const finished = toStringArray(finishedPlayers)
 
   const { getProgress } = useLadderAnimation(started, onPlayerFinished)
 
@@ -67,7 +68,7 @@ export function LadderBoard({ players, ladder, myPlayerId, onTapCharacter, onPla
 
   return (
     <div style={{ width: '100%', maxWidth: 600, margin: '0 auto' }}>
-      {animationStatus === 'animating' && !started.includes(myPlayerId) && (
+      {animationStatus !== 'idle' && !started.includes(myPlayerId) && (
         <p style={{ textAlign: 'center', color: '#FFEAA7', fontSize: 14, marginBottom: 8 }}>
           내 캐릭터를 터치해서 출발!
         </p>
@@ -147,7 +148,7 @@ export function LadderBoard({ players, ladder, myPlayerId, onTapCharacter, onPla
           const isStarted = started.includes(playerId)
           const isFinished = finished.includes(playerId)
           const isMe = playerId === myPlayerId
-          const canTap = isMe && !isStarted && animationStatus === 'animating'
+          const canTap = isMe && !isStarted && animationStatus !== 'idle'
           const color = playerColorMap[playerId]
 
           const progress = getProgress(playerId)
@@ -175,18 +176,6 @@ export function LadderBoard({ players, ladder, myPlayerId, onTapCharacter, onPla
               onClick={() => canTap && handleTap(playerId)}
               style={{ cursor: canTap ? 'pointer' : 'default' }}
             >
-              {!isStarted && (
-                <text
-                  x={getLineX(lineIndex, lineCount)}
-                  y={TOP_MARGIN - 10}
-                  textAnchor="middle"
-                  fontSize={18}
-                  fill="rgba(255,255,255,0.5)"
-                >
-                  {player.name}
-                </text>
-              )}
-
               <text
                 x={charX}
                 y={charY}
@@ -195,7 +184,7 @@ export function LadderBoard({ players, ladder, myPlayerId, onTapCharacter, onPla
                 dominantBaseline="central"
                 style={{
                   filter: canTap
-                    ? 'drop-shadow(0 0 12px rgba(255,234,167,0.8))'
+                    ? 'drop-shadow(0 0 12px rgba(16,185,129,0.8))'
                     : isStarted && !isFinished
                       ? `drop-shadow(0 0 6px ${color})`
                       : 'none',
@@ -212,20 +201,19 @@ export function LadderBoard({ players, ladder, myPlayerId, onTapCharacter, onPla
                     cy={charY}
                     r={30}
                     fill="transparent"
-                    stroke="rgba(255,234,167,0.4)"
-                    strokeWidth={2}
-                    strokeDasharray="6 4"
+                    stroke="rgba(16,185,129,0.6)"
+                    strokeWidth={4}
                   >
                     <animate
                       attributeName="r"
-                      values="28;34;28"
-                      dur="1.5s"
+                      values="28;36;28"
+                      dur="1.2s"
                       repeatCount="indefinite"
                     />
                     <animate
                       attributeName="opacity"
-                      values="1;0.4;1"
-                      dur="1.5s"
+                      values="1;0.3;1"
+                      dur="1.2s"
                       repeatCount="indefinite"
                     />
                   </circle>

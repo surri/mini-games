@@ -52,12 +52,12 @@ export function LadderResultPanel({ players, loserIds, onPlayAgain }: Props) {
       </p>
 
       <div style={{ display: 'flex', justifyContent: 'center', gap: 16, flexWrap: 'wrap', marginBottom: 16 }}>
-        {losers.map(({ id, player }) => (
+        {losers.map(({ id, player }, index) => (
           <motion.div
             key={id}
             initial={{ scale: 0 }}
             animate={{ scale: 1 }}
-            transition={{ type: 'spring', delay: 0.1 }}
+            transition={{ type: 'spring', delay: 0.1 * (index + 1) }}
           >
             <PlayerAvatar
               character={player.character}
