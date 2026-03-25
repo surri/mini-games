@@ -249,10 +249,9 @@ export function LadderBoard({ players, ladder, myPlayerId, onTapCharacter, onPla
                   x={x}
                   y={SVG_HEIGHT - BOTTOM_MARGIN + 50}
                   textAnchor="middle"
-                  fontSize={22}
-                  fill="rgba(255,255,255,0.3)"
+                  fontSize={28}
                 >
-                  ?
+                  🟢
                 </text>
               </g>
             )
@@ -266,23 +265,20 @@ export function LadderBoard({ players, ladder, myPlayerId, onTapCharacter, onPla
                   y={SVG_HEIGHT - BOTTOM_MARGIN + 50}
                   textAnchor="middle"
                   fontSize={28}
-                  fill="#FF6B6B"
-                  fontWeight="bold"
                   initial={{ opacity: 0, scale: 0.5 }}
                   animate={{ opacity: 1, scale: 1 }}
                   transition={{ type: 'spring', duration: 0.5 }}
                 >
-                  {result.label}
+                  ☕
                 </motion.text>
               ) : (
                 <text
                   x={x}
                   y={SVG_HEIGHT - BOTTOM_MARGIN + 50}
                   textAnchor="middle"
-                  fontSize={22}
-                  fill="rgba(255,255,255,0.3)"
+                  fontSize={28}
                 >
-                  ?
+                  🟢
                 </text>
               )}
             </g>
