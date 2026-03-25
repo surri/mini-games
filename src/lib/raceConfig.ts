@@ -78,8 +78,8 @@ export const OBSTACLE_TYPES: Record<string, ObstacleTypeConfig> = {
 export const OBSTACLE_SPAWN = {
   checkIntervalTicks: 5,
   spawnChance: {
-    opening: 0,
-    midrace: 0.08,
+    opening: 0.04,
+    midrace: 0.10,
     finalStretch: 0.12,
   } as Record<RacePhase, number>,
   positionAheadMin: -5,
