@@ -75,7 +75,7 @@ export function LadderBoard({ players, ladder, myPlayerId, onTapCharacter, onPla
       )}
       <svg
         viewBox={`0 0 ${SVG_WIDTH} ${SVG_HEIGHT}`}
-        style={{ width: '100%', height: 'auto' }}
+        style={{ width: '100%', height: 'auto', fontFamily: "'Apple Color Emoji', 'Segoe UI Emoji', 'Noto Color Emoji', emoji" }}
       >
         {Array.from({ length: lineCount }, (_, i) => {
           const x = getLineX(i, lineCount)
