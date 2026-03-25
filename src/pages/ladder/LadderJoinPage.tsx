@@ -2,15 +2,15 @@ import { useState, useEffect } from 'react'
 import { useParams } from 'react-router'
 import { motion } from 'framer-motion'
 import { joinRoom, getStoredPlayerId, getRoomOnce } from '../../lib/room'
+import { generateRandomName } from '../../lib/nameGenerator'
 import { useRoom } from '../../hooks/useRoom'
 import { CountdownOverlay } from '../../components/CountdownOverlay'
-import { RaceTrack } from '../../components/race/RaceTrack'
-import { RaceResult } from '../../components/race/RaceResult'
+import { LadderBoard } from '../../components/ladder/LadderBoard'
+import { LadderResultPanel } from '../../components/ladder/LadderResultPanel'
 import { CharacterPicker } from '../../components/CharacterPicker'
 import { getFirstAvailable } from '../../lib/characters'
-import { generateRandomName } from '../../lib/nameGenerator'
 
-export function RaceJoinPage() {
+export function LadderJoinPage() {
   const { roomId } = useParams<{ roomId: string }>()
   const [name, setName] = useState(generateRandomName)
   const [character, setCharacter] = useState(() => getFirstAvailable([]))
@@ -23,10 +23,16 @@ export function RaceJoinPage() {
 
   useEffect(() => {
     if (!roomId) return
-    getRoomOnce(roomId).then((r) => {
-      if (!r) setError('방을 찾을 수 없습니다')
-      setChecking(false)
-    })
+    getRoomOnce(roomId)
+      .then((r) => {
+        if (!r) setError('방을 찾을 수 없습니다')
+      })
+      .catch(() => {
+        setError('방 확인 중 오류가 발생했습니다')
+      })
+      .finally(() => {
+        setChecking(false)
+      })
   }, [roomId])
 
   useEffect(() => {
@@ -51,7 +57,7 @@ export function RaceJoinPage() {
       await joinRoom(roomId, name.trim(), character)
       sessionStorage.setItem(`joined_${roomId}`, '1')
       setJoined(true)
-    } catch (err) {
+    } catch {
       setError('참가에 실패했습니다')
     }
   }
@@ -76,7 +82,7 @@ export function RaceJoinPage() {
   if (!joined) {
     return (
       <div style={{ padding: 24, maxWidth: 400, margin: '0 auto', textAlign: 'center' }}>
-        <h2 style={{ marginBottom: 4 }}>🏇 레이스 참가</h2>
+        <h2 style={{ marginBottom: 4 }}>🪜 사다리 타기 참가</h2>
         <p style={{ color: '#888', marginBottom: 20 }}>방 코드: {roomId}</p>
 
         <div style={{ display: 'flex', gap: 8 }}>
@@ -144,12 +150,13 @@ export function RaceJoinPage() {
     )
   }
 
-  const raceRoom = room?.gameType === 'race' ? room : null
   const players = room?.players ?? {}
   const isCountdown = room?.status === 'countdown'
-  const isRacing = room?.status === 'racing'
+  const isPlaying = room?.status === 'playing'
   const isFinished = room?.status === 'finished'
   const isWaiting = room?.status === 'waiting'
+
+  const ladder = room?.gameType === 'ladder' ? room.ladder : null
 
   return (
     <div style={{ padding: 24, maxWidth: 600, margin: '0 auto' }}>
@@ -158,7 +165,7 @@ export function RaceJoinPage() {
       {isWaiting && (
         <div style={{ textAlign: 'center' }}>
           <h2>대기 중...</h2>
-          <p style={{ color: '#888' }}>호스트가 레이스를 시작할 때까지 기다려주세요</p>
+          <p style={{ color: '#888' }}>호스트가 사다리를 시작할 때까지 기다려주세요</p>
           <div style={{ display: 'flex', justifyContent: 'center', flexWrap: 'wrap', gap: 16, marginTop: 24 }}>
             {Object.entries(players).map(([id, player]) => (
               <motion.div
@@ -178,25 +185,14 @@ export function RaceJoinPage() {
         </div>
       )}
 
-      {(isCountdown || isRacing || isFinished) && raceRoom && (
-        <RaceTrack
-          players={players}
-          positions={raceRoom.race.positions ?? {}}
-          winnerId={raceRoom.race.winnerId ?? null}
-          loserId={raceRoom.race.loserId ?? null}
-          finished={isFinished}
-          obstacles={raceRoom.race.obstacles ?? null}
-          effects={raceRoom.race.effects ?? null}
-          phase={raceRoom.race.phase ?? null}
-        />
+      {(isCountdown || isPlaying || isFinished) && ladder && (
+        <LadderBoard players={players} ladder={ladder} />
       )}
 
-      {isFinished && raceRoom?.race.winnerId && raceRoom?.race.loserId && (
-        <RaceResult
+      {isFinished && ladder?.loserId && (
+        <LadderResultPanel
           players={players}
-          winnerId={raceRoom.race.winnerId}
-          loserId={raceRoom.race.loserId}
-          onPlayAgain={() => {}}
+          loserId={ladder.loserId}
         />
       )}
     </div>

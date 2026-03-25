@@ -3,6 +3,7 @@ import { motion } from 'framer-motion'
 
 const GAMES = [
   { id: 'race', emoji: '🏇', title: '레이스', description: '꼴찌가 커피 삽니다' },
+  { id: 'ladder', emoji: '🪜', title: '사다리 타기', description: '누가 커피 당첨?' },
 ]
 
 export function HomePage() {

@@ -1,27 +1,26 @@
 import { useState } from 'react'
 import { useNavigate } from 'react-router'
 import { motion } from 'framer-motion'
-import { createRoom, joinRoom, resetRace } from '../../lib/room'
+import { createRoom, joinRoom } from '../../lib/room'
 import { generateRandomName } from '../../lib/nameGenerator'
 import { useRoom } from '../../hooks/useRoom'
-import { useRace } from '../../hooks/useRace'
+import { useLadder } from '../../hooks/useLadder'
 import { QRCode } from '../../components/QRCode'
 import { PlayerAvatar } from '../../components/PlayerAvatar'
 import { CountdownOverlay } from '../../components/CountdownOverlay'
-import { RaceTrack } from '../../components/race/RaceTrack'
-import { RaceResult } from '../../components/race/RaceResult'
+import { LadderBoard } from '../../components/ladder/LadderBoard'
+import { LadderResultPanel } from '../../components/ladder/LadderResultPanel'
 import { CharacterPicker } from '../../components/CharacterPicker'
 import { CHARACTERS } from '../../lib/characters'
 
-export function RaceLobbyPage() {
+export function LadderLobbyPage() {
   const [roomId, setRoomId] = useState<string | null>(null)
   const [creating, setCreating] = useState(false)
   const [hostJoined, setHostJoined] = useState(false)
   const [hostName, setHostName] = useState(generateRandomName)
   const [hostChar, setHostChar] = useState(CHARACTERS[0])
   const { room } = useRoom(roomId ?? undefined)
-  const raceRoom = room?.gameType === 'race' ? room : null
-  const { startRace } = useRace(roomId ?? '', raceRoom)
+  const { startLadder, resetGame } = useLadder(roomId ?? '', room)
   const navigate = useNavigate()
   const players = room?.players ?? {}
   const playerCount = Object.keys(players).length
@@ -29,9 +28,9 @@ export function RaceLobbyPage() {
   const handleCreate = async () => {
     setCreating(true)
     try {
-      const id = await createRoom()
+      const id = await createRoom('ladder')
       setRoomId(id)
-    } catch (error) {
+    } catch {
       setCreating(false)
     }
   }
@@ -44,20 +43,20 @@ export function RaceLobbyPage() {
 
   const handleStart = () => {
     if (playerCount < 2) return
-    startRace()
+    startLadder()
   }
 
   const handlePlayAgain = async () => {
     if (!roomId) return
-    await resetRace(roomId)
+    await resetGame()
   }
 
   if (!roomId) {
     return (
       <div style={{ padding: 24, maxWidth: 480, margin: '0 auto', textAlign: 'center' }}>
-        <h1 style={{ fontSize: 40, marginBottom: 8 }}>🏇</h1>
-        <h2 style={{ marginBottom: 24 }}>레이스</h2>
-        <p style={{ color: '#888', marginBottom: 32 }}>꼴찌가 커피 삽니다</p>
+        <h1 style={{ fontSize: 40, marginBottom: 8 }}>🪜</h1>
+        <h2 style={{ marginBottom: 24 }}>사다리 타기</h2>
+        <p style={{ color: '#888', marginBottom: 32 }}>누가 커피 당첨?</p>
         <motion.button
           whileTap={{ scale: 0.95 }}
           onClick={handleCreate}
@@ -156,8 +155,10 @@ export function RaceLobbyPage() {
   }
 
   const isCountdown = room?.status === 'countdown'
-  const isRacing = room?.status === 'racing'
+  const isPlaying = room?.status === 'playing'
   const isFinished = room?.status === 'finished'
+
+  const ladder = room?.gameType === 'ladder' ? room.ladder : null
 
   return (
     <div style={{ padding: 24, maxWidth: 600, margin: '0 auto' }}>
@@ -166,7 +167,7 @@ export function RaceLobbyPage() {
       {room?.status === 'waiting' && (
         <>
           <h2 style={{ textAlign: 'center', marginBottom: 16 }}>대기실</h2>
-          <QRCode roomId={roomId} gameType="race" />
+          <QRCode roomId={roomId} gameType="ladder" />
 
           <div style={{ marginTop: 24 }}>
             <h3 style={{ marginBottom: 12 }}>
@@ -204,29 +205,19 @@ export function RaceLobbyPage() {
               cursor: playerCount >= 2 ? 'pointer' : 'not-allowed',
             }}
           >
-            {playerCount < 2 ? '2명 이상 필요' : `레이스 시작! (${playerCount}명)`}
+            {playerCount < 2 ? '2명 이상 필요' : `사다리 시작! (${playerCount}명)`}
           </motion.button>
         </>
       )}
 
-      {(isCountdown || isRacing || isFinished) && raceRoom && (
-        <RaceTrack
-          players={players}
-          positions={raceRoom.race.positions ?? {}}
-          winnerId={raceRoom.race.winnerId ?? null}
-          loserId={raceRoom.race.loserId ?? null}
-          finished={isFinished}
-          obstacles={raceRoom.race.obstacles ?? null}
-          effects={raceRoom.race.effects ?? null}
-          phase={raceRoom.race.phase ?? null}
-        />
+      {(isCountdown || isPlaying || isFinished) && ladder && (
+        <LadderBoard players={players} ladder={ladder} />
       )}
 
-      {isFinished && raceRoom?.race.winnerId && raceRoom?.race.loserId && (
-        <RaceResult
+      {isFinished && ladder?.loserId && (
+        <LadderResultPanel
           players={players}
-          winnerId={raceRoom.race.winnerId}
-          loserId={raceRoom.race.loserId}
+          loserId={ladder.loserId}
           onPlayAgain={handlePlayAgain}
         />
       )}

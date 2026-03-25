@@ -1,6 +1,6 @@
 import { ref, set, onValue, off, remove, get } from 'firebase/database'
 import { db } from './firebase'
-import type { Room, Player, RoomStatus, RaceState } from '../types'
+import type { Room, RaceRoom, LadderRoom, Player, RoomStatus, RaceState, RacePhase, Obstacle, PlayerEffects, LadderState } from '../types'
 
 const ROOM_TTL_MS = 60 * 60 * 1000
 
@@ -23,23 +23,46 @@ export function getStoredPlayerId(): string {
   return id
 }
 
-export async function createRoom(): Promise<string> {
+function createInitialRaceState(): RaceState {
+  return {
+    positions: {},
+    winnerId: null,
+    loserId: null,
+    finishedAt: null,
+    phase: null,
+    obstacles: null,
+    effects: null,
+  }
+}
+
+function createInitialLadderState(): LadderState {
+  return {
+    bridges: {},
+    playerAssignments: {},
+    results: {},
+    paths: null,
+    animationStatus: 'idle',
+    currentAnimatingPlayer: null,
+    animationOrder: [],
+    loserId: null,
+    revealedPlayers: [],
+  }
+}
+
+export async function createRoom(gameType: 'race' | 'ladder' = 'race'): Promise<string> {
   const roomId = generateRoomId()
   const playerId = getStoredPlayerId()
 
-  const room: Room = {
+  const base = {
     hostId: playerId,
-    status: 'waiting',
+    status: 'waiting' as const,
     createdAt: Date.now(),
-    gameType: 'race',
     players: {},
-    race: {
-      positions: {},
-      winnerId: null,
-      loserId: null,
-      finishedAt: null,
-    },
   }
+
+  const room: Room = gameType === 'race'
+    ? { ...base, gameType: 'race', race: createInitialRaceState() } as RaceRoom
+    : { ...base, gameType: 'ladder', ladder: createInitialLadderState() } as LadderRoom
 
   await set(ref(db, `rooms/${roomId}`), room)
   return roomId
@@ -89,6 +112,8 @@ export async function updateRoomStatus(
   await set(ref(db, `rooms/${roomId}/status`), status)
 }
 
+// --- Race-specific functions ---
+
 export async function updateRaceState(
   roomId: string,
   race: Partial<RaceState>
@@ -106,14 +131,47 @@ export async function updatePositions(
   await set(ref(db, `rooms/${roomId}/race/positions`), positions)
 }
 
+export async function updateRacePhase(
+  roomId: string,
+  phase: RacePhase
+): Promise<void> {
+  await set(ref(db, `rooms/${roomId}/race/phase`), phase)
+}
+
+export async function updateObstacles(
+  roomId: string,
+  obstacles: Record<string, Obstacle>
+): Promise<void> {
+  await set(ref(db, `rooms/${roomId}/race/obstacles`), obstacles)
+}
+
+export async function updatePlayerEffects(
+  roomId: string,
+  effects: Record<string, PlayerEffects>
+): Promise<void> {
+  await set(ref(db, `rooms/${roomId}/race/effects`), effects)
+}
+
 export async function resetRace(roomId: string): Promise<void> {
   await set(ref(db, `rooms/${roomId}/status`), 'waiting')
-  await set(ref(db, `rooms/${roomId}/race`), {
-    positions: {},
-    winnerId: null,
-    loserId: null,
-    finishedAt: null,
-  })
+  await set(ref(db, `rooms/${roomId}/race`), createInitialRaceState())
+}
+
+// --- Ladder-specific functions ---
+
+export async function updateLadderState(
+  roomId: string,
+  ladder: Partial<LadderState>
+): Promise<void> {
+  const ladderRef = ref(db, `rooms/${roomId}/ladder`)
+  const snapshot = await get(ladderRef)
+  const current = snapshot.exists() ? snapshot.val() : {}
+  await set(ladderRef, { ...current, ...ladder })
+}
+
+export async function resetLadder(roomId: string): Promise<void> {
+  await set(ref(db, `rooms/${roomId}/status`), 'waiting')
+  await set(ref(db, `rooms/${roomId}/ladder`), createInitialLadderState())
 }
 
 export async function removeRoom(roomId: string): Promise<void> {
