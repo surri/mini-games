@@ -5,7 +5,7 @@ import {
   assignPlayersToLines,
   generateResults,
   resolveAllPaths,
-  findLoserFromPaths,
+  findLosersFromPaths,
 } from '../lib/ladderEngine'
 import { LADDER_CONFIG } from '../lib/ladderConfig'
 import type { Room } from '../types'
@@ -13,7 +13,7 @@ import type { Room } from '../types'
 export function useLadder(roomId: string, room: Room | null) {
   const startingRef = useRef(false)
 
-  const startLadder = useCallback(async () => {
+  const startLadder = useCallback(async (loserCount: number = 1) => {
     if (!room || room.gameType !== 'ladder') return
     if (startingRef.current) return
     startingRef.current = true
@@ -27,9 +27,9 @@ export function useLadder(roomId: string, room: Room | null) {
     const lineCount = playerIds.length
     const bridges = generateBridges(lineCount)
     const playerAssignments = assignPlayersToLines(playerIds)
-    const results = generateResults(lineCount)
+    const results = generateResults(lineCount, loserCount)
     const paths = resolveAllPaths(playerAssignments, bridges, lineCount)
-    const loserId = findLoserFromPaths(paths, results)
+    const loserIds = findLosersFromPaths(paths, results)
 
     const bridgeMap: Record<string, (typeof bridges)[number]> = {}
     bridges.forEach((b) => {
@@ -41,7 +41,7 @@ export function useLadder(roomId: string, room: Room | null) {
       playerAssignments,
       results,
       paths,
-      loserId,
+      loserIds,
       animationStatus: 'animating',
       startedPlayers: [],
       finishedPlayers: [],
@@ -93,7 +93,7 @@ export function useLadder(roomId: string, room: Room | null) {
       results: {},
       paths: null,
       animationStatus: 'idle',
-      loserId: null,
+      loserIds: [],
       startedPlayers: [],
       finishedPlayers: [],
     })

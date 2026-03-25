@@ -7,13 +7,16 @@ import type { Player } from '../../types'
 
 interface Props {
   players: Record<string, Player>
-  loserId: string
+  loserIds: string[]
   onPlayAgain?: () => void
 }
 
-export function LadderResultPanel({ players, loserId, onPlayAgain }: Props) {
+export function LadderResultPanel({ players, loserIds, onPlayAgain }: Props) {
   const soundPlayedRef = useRef(false)
-  const loser = players[loserId]
+
+  const losers = loserIds
+    .map((id) => ({ id, player: players[id] }))
+    .filter((l) => l.player)
 
   useEffect(() => {
     if (soundPlayedRef.current) return
@@ -29,7 +32,7 @@ export function LadderResultPanel({ players, loserId, onPlayAgain }: Props) {
     })
   }, [])
 
-  if (!loser) return null
+  if (losers.length === 0) return null
 
   return (
     <motion.div
@@ -44,24 +47,35 @@ export function LadderResultPanel({ players, loserId, onPlayAgain }: Props) {
         border: '1px solid rgba(255,255,255,0.1)',
       }}
     >
-      <p style={{ fontSize: 20, marginBottom: 16 }}>☕ 커피 당첨!</p>
+      <p style={{ fontSize: 20, marginBottom: 16 }}>
+        ☕ 커피 당첨 {losers.length}명!
+      </p>
 
-      <div style={{ display: 'flex', justifyContent: 'center', marginBottom: 16 }}>
-        <PlayerAvatar
-          character={loser.character}
-          name={loser.name}
-          size={64}
-          highlight="loser"
-        />
+      <div style={{ display: 'flex', justifyContent: 'center', gap: 16, flexWrap: 'wrap', marginBottom: 16 }}>
+        {losers.map(({ id, player }) => (
+          <motion.div
+            key={id}
+            initial={{ scale: 0 }}
+            animate={{ scale: 1 }}
+            transition={{ type: 'spring', delay: 0.1 }}
+          >
+            <PlayerAvatar
+              character={player.character}
+              name={player.name}
+              size={64}
+              highlight="loser"
+            />
+          </motion.div>
+        ))}
       </div>
 
       <motion.p
         initial={{ scale: 0 }}
         animate={{ scale: 1 }}
         transition={{ type: 'spring', delay: 0.3 }}
-        style={{ fontSize: 24, fontWeight: 700 }}
+        style={{ fontSize: 22, fontWeight: 700 }}
       >
-        {loser.name}님, 커피 사세요! ☕
+        {losers.map((l) => l.player.name).join(', ')}님, 커피 사세요! ☕
       </motion.p>
 
       {onPlayAgain && (

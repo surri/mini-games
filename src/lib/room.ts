@@ -42,7 +42,7 @@ function createInitialLadderState(): LadderState {
     results: {},
     paths: null,
     animationStatus: 'idle',
-    loserId: null,
+    loserIds: [],
     startedPlayers: [],
     finishedPlayers: [],
   }

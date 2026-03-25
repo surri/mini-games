@@ -58,12 +58,14 @@ export function assignPlayersToLines(playerIds: readonly string[]): Record<strin
   return assignments
 }
 
-export function generateResults(lineCount: number): Record<string, LadderResult> {
-  const loserIndex = Math.floor(Math.random() * lineCount)
+export function generateResults(lineCount: number, loserCount: number = 1): Record<string, LadderResult> {
+  const count = Math.min(loserCount, lineCount - 1)
+  const indices = Array.from({ length: lineCount }, (_, i) => i)
+  const loserIndices = new Set(shuffleArray(indices).slice(0, count))
   const results: Record<string, LadderResult> = {}
 
   for (let i = 0; i < lineCount; i++) {
-    const isLoser = i === loserIndex
+    const isLoser = loserIndices.has(i)
     results[String(i)] = {
       lineIndex: i,
       label: isLoser ? '☕ 커피 당첨!' : '✅ 안전!',
@@ -230,13 +232,14 @@ export function getPositionAtProgress(
   return { x: toSVGX(last.toX), y: toSVGY(last.toY) }
 }
 
-export function findLoserFromPaths(
+export function findLosersFromPaths(
   paths: Record<string, LadderPath>,
   results: Record<string, LadderResult>
-): string | null {
+): string[] {
+  const losers: string[] = []
   for (const [playerId, path] of Object.entries(paths)) {
     const result = results[String(path.endLine)]
-    if (result?.isLoser) return playerId
+    if (result?.isLoser) losers.push(playerId)
   }
-  return null
+  return losers
 }

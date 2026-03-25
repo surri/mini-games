@@ -19,6 +19,7 @@ export function LadderLobbyPage() {
   const [hostJoined, setHostJoined] = useState(false)
   const [hostName, setHostName] = useState(generateRandomName)
   const [hostChar, setHostChar] = useState(CHARACTERS[0])
+  const [loserCount, setLoserCount] = useState(1)
   const { room } = useRoom(roomId ?? undefined)
   const { startLadder, triggerPlayer, markFinished, resetGame } = useLadder(roomId ?? '', room)
   const myPlayerId = getStoredPlayerId()
@@ -42,9 +43,11 @@ export function LadderLobbyPage() {
     setHostJoined(true)
   }
 
+  const maxLosers = Math.max(1, playerCount - 1)
+
   const handleStart = () => {
     if (playerCount < 2) return
-    startLadder()
+    startLadder(loserCount)
   }
 
   const handlePlayAgain = async () => {
@@ -185,6 +188,35 @@ export function LadderLobbyPage() {
             </div>
           </div>
 
+          {playerCount >= 2 && (
+            <div style={{ marginTop: 24 }}>
+              <p style={{ fontSize: 14, color: '#888', marginBottom: 8 }}>
+                ☕ 커피 당첨 인원
+              </p>
+              <div style={{ display: 'flex', gap: 6, justifyContent: 'center', flexWrap: 'wrap' }}>
+                {Array.from({ length: maxLosers }, (_, i) => i + 1).map((n) => (
+                  <button
+                    key={n}
+                    onClick={() => setLoserCount(n)}
+                    style={{
+                      width: 44,
+                      height: 44,
+                      fontSize: 16,
+                      fontWeight: loserCount === n ? 700 : 400,
+                      borderRadius: 10,
+                      border: loserCount === n ? '2px solid #FF6B6B' : '1px solid rgba(255,255,255,0.15)',
+                      background: loserCount === n ? 'rgba(255,107,107,0.2)' : 'transparent',
+                      color: loserCount === n ? '#FF6B6B' : '#aaa',
+                      cursor: 'pointer',
+                    }}
+                  >
+                    {n}
+                  </button>
+                ))}
+              </div>
+            </div>
+          )}
+
           <motion.button
             whileTap={{ scale: 0.95 }}
             onClick={handleStart}
@@ -192,7 +224,7 @@ export function LadderLobbyPage() {
             style={{
               display: 'block',
               width: '100%',
-              marginTop: 24,
+              marginTop: 16,
               padding: '14px 0',
               fontSize: 18,
               fontWeight: 700,
@@ -203,7 +235,7 @@ export function LadderLobbyPage() {
               cursor: playerCount >= 2 ? 'pointer' : 'not-allowed',
             }}
           >
-            {playerCount < 2 ? '2명 이상 필요' : `사다리 시작! (${playerCount}명)`}
+            {playerCount < 2 ? '2명 이상 필요' : `사다리 시작! (당첨 ${loserCount}명)`}
           </motion.button>
         </>
       )}
@@ -218,10 +250,10 @@ export function LadderLobbyPage() {
         />
       )}
 
-      {isFinished && ladder?.loserId && (
+      {isFinished && ladder && (ladder.loserIds ?? []).length > 0 && (
         <LadderResultPanel
           players={players}
-          loserId={ladder.loserId}
+          loserIds={ladder.loserIds}
           onPlayAgain={handlePlayAgain}
         />
       )}

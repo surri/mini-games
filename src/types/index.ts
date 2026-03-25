@@ -83,7 +83,7 @@ export interface LadderState {
   results: Record<string, LadderResult>
   paths: Record<string, LadderPath> | null
   animationStatus: LadderAnimationStatus
-  loserId: string | null
+  loserIds: string[]
   startedPlayers: string[]
   finishedPlayers: string[]
 }

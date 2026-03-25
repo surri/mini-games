@@ -193,10 +193,10 @@ export function LadderJoinPage() {
         />
       )}
 
-      {isFinished && ladder?.loserId && (
+      {isFinished && ladder && (ladder.loserIds ?? []).length > 0 && (
         <LadderResultPanel
           players={players}
-          loserId={ladder.loserId}
+          loserIds={ladder.loserIds}
         />
       )}
     </div>
