@@ -19,7 +19,7 @@ interface Props {
 }
 
 const SVG_WIDTH = 1000
-const SVG_HEIGHT = 1200
+const SVG_HEIGHT = 1600
 const TOP_MARGIN = 100
 const BOTTOM_MARGIN = 100
 
