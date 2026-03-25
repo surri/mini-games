@@ -83,10 +83,9 @@ export interface LadderState {
   results: Record<string, LadderResult>
   paths: Record<string, LadderPath> | null
   animationStatus: LadderAnimationStatus
-  currentAnimatingPlayer: string | null
-  animationOrder: string[]
   loserId: string | null
-  revealedPlayers: string[]
+  startedPlayers: string[]
+  finishedPlayers: string[]
 }
 
 // --- Room Types (Discriminated Union) ---

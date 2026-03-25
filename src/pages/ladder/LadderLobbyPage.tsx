@@ -7,11 +7,11 @@ import { useRoom } from '../../hooks/useRoom'
 import { useLadder } from '../../hooks/useLadder'
 import { QRCode } from '../../components/QRCode'
 import { PlayerAvatar } from '../../components/PlayerAvatar'
-import { CountdownOverlay } from '../../components/CountdownOverlay'
 import { LadderBoard } from '../../components/ladder/LadderBoard'
 import { LadderResultPanel } from '../../components/ladder/LadderResultPanel'
 import { CharacterPicker } from '../../components/CharacterPicker'
 import { CHARACTERS } from '../../lib/characters'
+import { getStoredPlayerId } from '../../lib/room'
 
 export function LadderLobbyPage() {
   const [roomId, setRoomId] = useState<string | null>(null)
@@ -20,7 +20,8 @@ export function LadderLobbyPage() {
   const [hostName, setHostName] = useState(generateRandomName)
   const [hostChar, setHostChar] = useState(CHARACTERS[0])
   const { room } = useRoom(roomId ?? undefined)
-  const { startLadder, resetGame } = useLadder(roomId ?? '', room)
+  const { startLadder, triggerPlayer, markFinished, resetGame } = useLadder(roomId ?? '', room)
+  const myPlayerId = getStoredPlayerId()
   const navigate = useNavigate()
   const players = room?.players ?? {}
   const playerCount = Object.keys(players).length
@@ -154,7 +155,6 @@ export function LadderLobbyPage() {
     )
   }
 
-  const isCountdown = room?.status === 'countdown'
   const isPlaying = room?.status === 'playing'
   const isFinished = room?.status === 'finished'
 
@@ -162,8 +162,6 @@ export function LadderLobbyPage() {
 
   return (
     <div style={{ padding: 24, maxWidth: 600, margin: '0 auto' }}>
-      <CountdownOverlay active={isCountdown} />
-
       {room?.status === 'waiting' && (
         <>
           <h2 style={{ textAlign: 'center', marginBottom: 16 }}>대기실</h2>
@@ -210,8 +208,14 @@ export function LadderLobbyPage() {
         </>
       )}
 
-      {(isCountdown || isPlaying || isFinished) && ladder && (
-        <LadderBoard players={players} ladder={ladder} />
+      {(isPlaying || isFinished) && ladder && (
+        <LadderBoard
+          players={players}
+          ladder={ladder}
+          myPlayerId={myPlayerId}
+          onTapCharacter={triggerPlayer}
+          onPlayerFinished={markFinished}
+        />
       )}
 
       {isFinished && ladder?.loserId && (

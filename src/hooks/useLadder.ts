@@ -5,20 +5,13 @@ import {
   assignPlayersToLines,
   generateResults,
   resolveAllPaths,
-  generateAnimationOrder,
   findLoserFromPaths,
 } from '../lib/ladderEngine'
 import { LADDER_CONFIG } from '../lib/ladderConfig'
 import type { Room } from '../types'
 
 export function useLadder(roomId: string, room: Room | null) {
-  const timersRef = useRef<ReturnType<typeof setTimeout>[]>([])
   const startingRef = useRef(false)
-
-  const clearTimers = useCallback(() => {
-    timersRef.current.forEach(clearTimeout)
-    timersRef.current = []
-  }, [])
 
   const startLadder = useCallback(async () => {
     if (!room || room.gameType !== 'ladder') return
@@ -31,14 +24,11 @@ export function useLadder(roomId: string, room: Room | null) {
       return
     }
 
-    clearTimers()
-
     const lineCount = playerIds.length
     const bridges = generateBridges(lineCount)
     const playerAssignments = assignPlayersToLines(playerIds)
     const results = generateResults(lineCount)
     const paths = resolveAllPaths(playerAssignments, bridges, lineCount)
-    const animationOrder = generateAnimationOrder(playerIds)
     const loserId = findLoserFromPaths(paths, results)
 
     const bridgeMap: Record<string, (typeof bridges)[number]> = {}
@@ -51,59 +41,51 @@ export function useLadder(roomId: string, room: Room | null) {
       playerAssignments,
       results,
       paths,
-      animationOrder,
       loserId,
-      animationStatus: 'idle',
-      currentAnimatingPlayer: null,
-      revealedPlayers: [],
+      animationStatus: 'animating',
+      startedPlayers: [],
+      finishedPlayers: [],
     })
 
-    await updateRoomStatus(roomId, 'countdown')
+    await updateRoomStatus(roomId, 'playing')
+  }, [room, roomId])
 
-    const countdownTimer = setTimeout(async () => {
-      await updateRoomStatus(roomId, 'playing')
-      await updateLadderState(roomId, { animationStatus: 'animating' })
+  const triggerPlayer = useCallback(async (playerId: string) => {
+    if (!room || room.gameType !== 'ladder') return
+    const ladder = room.ladder
+    const started = ladder.startedPlayers ?? []
+    if (started.includes(playerId)) return
 
-      let delay = 0
+    await updateLadderState(roomId, {
+      startedPlayers: [...started, playerId],
+    })
+  }, [room, roomId])
 
-      animationOrder.forEach((playerId, index) => {
-        const timer = setTimeout(async () => {
-          await updateLadderState(roomId, {
-            currentAnimatingPlayer: playerId,
-          })
-        }, delay)
-        timersRef.current.push(timer)
+  const markFinished = useCallback(async (playerId: string) => {
+    if (!room || room.gameType !== 'ladder') return
+    const ladder = room.ladder
+    const finished = ladder.finishedPlayers ?? []
+    if (finished.includes(playerId)) return
 
-        delay += LADDER_CONFIG.ANIMATION.PATH_DURATION_MS
+    const newFinished = [...finished, playerId]
+    const playerCount = Object.keys(room.players ?? {}).length
+    const allDone = newFinished.length >= playerCount
 
-        const revealTimer = setTimeout(async () => {
-          const revealed = animationOrder.slice(0, index + 1)
-          await updateLadderState(roomId, {
-            revealedPlayers: revealed,
-          })
-        }, delay)
-        timersRef.current.push(revealTimer)
-
-        if (index < animationOrder.length - 1) {
-          delay += LADDER_CONFIG.ANIMATION.PAUSE_BETWEEN_MS
-        }
+    if (allDone) {
+      await updateLadderState(roomId, {
+        finishedPlayers: newFinished,
+        animationStatus: 'revealed',
       })
-
-      const finishTimer = setTimeout(async () => {
-        await updateLadderState(roomId, {
-          animationStatus: 'revealed',
-          currentAnimatingPlayer: null,
-        })
-        await updateRoomStatus(roomId, 'finished')
-      }, delay + 500)
-      timersRef.current.push(finishTimer)
-    }, LADDER_CONFIG.ANIMATION.COUNTDOWN_DURATION_MS)
-
-    timersRef.current.push(countdownTimer)
-  }, [room, roomId, clearTimers])
+      await updateRoomStatus(roomId, 'finished')
+    } else {
+      await updateLadderState(roomId, {
+        finishedPlayers: newFinished,
+      })
+    }
+  }, [room, roomId])
 
   const resetGame = useCallback(async () => {
-    clearTimers()
+    startingRef.current = false
     await updateRoomStatus(roomId, 'waiting')
     await updateLadderState(roomId, {
       bridges: {},
@@ -111,12 +93,11 @@ export function useLadder(roomId: string, room: Room | null) {
       results: {},
       paths: null,
       animationStatus: 'idle',
-      currentAnimatingPlayer: null,
-      animationOrder: [],
       loserId: null,
-      revealedPlayers: [],
+      startedPlayers: [],
+      finishedPlayers: [],
     })
-  }, [roomId, clearTimers])
+  }, [roomId])
 
-  return { startLadder, resetGame }
+  return { startLadder, triggerPlayer, markFinished, resetGame }
 }

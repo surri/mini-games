@@ -189,6 +189,47 @@ export function segmentsToSVGPath(
   return d
 }
 
+export function getPositionAtProgress(
+  segments: readonly LadderPathSegment[],
+  progress: number,
+  width: number,
+  height: number,
+  topMargin: number,
+  bottomMargin: number
+): { x: number; y: number } {
+  if (segments.length === 0) return { x: 0, y: 0 }
+
+  const drawableHeight = height - topMargin - bottomMargin
+  const toSVGX = (nx: number) => nx * width
+  const toSVGY = (ny: number) => topMargin + ny * drawableHeight
+
+  const segLengths = segments.map((seg) => {
+    const dx = toSVGX(seg.toX) - toSVGX(seg.fromX)
+    const dy = toSVGY(seg.toY) - toSVGY(seg.fromY)
+    return Math.sqrt(dx * dx + dy * dy)
+  })
+
+  const totalLength = segLengths.reduce((a, b) => a + b, 0)
+  const targetDist = Math.min(1, Math.max(0, progress)) * totalLength
+
+  let accumulated = 0
+  for (let i = 0; i < segments.length; i++) {
+    const segLen = segLengths[i]
+    if (accumulated + segLen >= targetDist) {
+      const segProgress = segLen > 0 ? (targetDist - accumulated) / segLen : 0
+      const seg = segments[i]
+      return {
+        x: toSVGX(seg.fromX) + (toSVGX(seg.toX) - toSVGX(seg.fromX)) * segProgress,
+        y: toSVGY(seg.fromY) + (toSVGY(seg.toY) - toSVGY(seg.fromY)) * segProgress,
+      }
+    }
+    accumulated += segLen
+  }
+
+  const last = segments[segments.length - 1]
+  return { x: toSVGX(last.toX), y: toSVGY(last.toY) }
+}
+
 export function findLoserFromPaths(
   paths: Record<string, LadderPath>,
   results: Record<string, LadderResult>

@@ -4,7 +4,7 @@ import { motion } from 'framer-motion'
 import { joinRoom, getStoredPlayerId, getRoomOnce } from '../../lib/room'
 import { generateRandomName } from '../../lib/nameGenerator'
 import { useRoom } from '../../hooks/useRoom'
-import { CountdownOverlay } from '../../components/CountdownOverlay'
+import { useLadder } from '../../hooks/useLadder'
 import { LadderBoard } from '../../components/ladder/LadderBoard'
 import { LadderResultPanel } from '../../components/ladder/LadderResultPanel'
 import { CharacterPicker } from '../../components/CharacterPicker'
@@ -18,6 +18,7 @@ export function LadderJoinPage() {
   const [error, setError] = useState<string | null>(null)
   const [checking, setChecking] = useState(true)
   const { room } = useRoom(roomId)
+  const { triggerPlayer, markFinished } = useLadder(roomId ?? '', room)
 
   const playerId = getStoredPlayerId()
 
@@ -151,7 +152,6 @@ export function LadderJoinPage() {
   }
 
   const players = room?.players ?? {}
-  const isCountdown = room?.status === 'countdown'
   const isPlaying = room?.status === 'playing'
   const isFinished = room?.status === 'finished'
   const isWaiting = room?.status === 'waiting'
@@ -160,8 +160,6 @@ export function LadderJoinPage() {
 
   return (
     <div style={{ padding: 24, maxWidth: 600, margin: '0 auto' }}>
-      <CountdownOverlay active={isCountdown} />
-
       {isWaiting && (
         <div style={{ textAlign: 'center' }}>
           <h2>대기 중...</h2>
@@ -185,8 +183,14 @@ export function LadderJoinPage() {
         </div>
       )}
 
-      {(isCountdown || isPlaying || isFinished) && ladder && (
-        <LadderBoard players={players} ladder={ladder} />
+      {(isPlaying || isFinished) && ladder && (
+        <LadderBoard
+          players={players}
+          ladder={ladder}
+          myPlayerId={playerId}
+          onTapCharacter={triggerPlayer}
+          onPlayerFinished={markFinished}
+        />
       )}
 
       {isFinished && ladder?.loserId && (
