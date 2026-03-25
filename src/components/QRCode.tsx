@@ -7,8 +7,7 @@ interface Props {
 }
 
 function buildJoinUrl(roomId: string, gameType: string): string {
-  const base = window.location.origin + window.location.pathname
-  return `${base}#/${gameType}/join/${roomId}`
+  return `${window.location.origin}/mini-games/${gameType}/${roomId}`
 }
 
 export function QRCode({ roomId, gameType = 'race' }: Props) {

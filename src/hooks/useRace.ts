@@ -89,7 +89,15 @@ export function useRace(roomId: string, room: RaceRoom | null) {
         let finished = false
         let winnerId: string | null = null
 
-        for (const id of playerIds) {
+        const shuffled = [...playerIds]
+        for (let i = shuffled.length - 1; i > 0; i--) {
+          const j = Math.floor(Math.random() * (i + 1))
+          const tmp = shuffled[i]
+          shuffled[i] = shuffled[j]
+          shuffled[j] = tmp
+        }
+
+        for (const id of shuffled) {
           if (positions[id] >= RACE_CONFIG.FINISH_LINE) continue
 
           physics[id] = updateMomentum(physics[id])
@@ -119,7 +127,7 @@ export function useRace(roomId: string, room: RaceRoom | null) {
 
         // Obstacle spawn
         if (shouldSpawnObstacle(phase, obstaclesRef.current.filter((o) => !o.triggered).length, currentTick)) {
-          const obstacle = generateObstacle(leaderPosition, playerIds, leaderId, currentTick)
+          const obstacle = generateObstacle(leaderPosition, playerIds, leaderId, currentTick, positions)
           obstaclesRef.current = [...obstaclesRef.current, obstacle]
           pendingSyncRef.current.obstacles = true
         }

@@ -100,7 +100,8 @@ export function generateObstacle(
   leaderPosition: number,
   playerIds: string[],
   leaderId: string,
-  tick: number
+  tick: number,
+  positions?: Record<string, number>
 ): Obstacle {
   const typeKeys = Object.keys(OBSTACLE_TYPES)
   const weights = typeKeys.map((k) => OBSTACLE_TYPES[k].spawnWeight)
@@ -129,10 +130,11 @@ export function generateObstacle(
     }
   }
 
+  const targetPosition = positions?.[selectedLane] ?? leaderPosition
   const offset =
     OBSTACLE_SPAWN.positionAheadMin +
     Math.random() * (OBSTACLE_SPAWN.positionAheadMax - OBSTACLE_SPAWN.positionAheadMin)
-  const position = Math.min(95, Math.max(5, leaderPosition + offset))
+  const position = Math.min(95, Math.max(targetPosition + 2, targetPosition + offset))
 
   return {
     id: `obs_${tick}_${Math.random().toString(36).slice(2, 6)}`,
