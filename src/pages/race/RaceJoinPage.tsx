@@ -7,13 +7,15 @@ import { CountdownOverlay } from '../../components/CountdownOverlay'
 import { RaceTrack } from '../../components/race/RaceTrack'
 import { RaceResult } from '../../components/race/RaceResult'
 import { CharacterPicker } from '../../components/CharacterPicker'
-import { getFirstAvailable } from '../../lib/characters'
+import { shuffleCharacters, getFirstAvailable } from '../../lib/characters'
 import { generateRandomName } from '../../lib/nameGenerator'
+
+const shuffled = shuffleCharacters()
 
 export function RaceJoinPage() {
   const { roomId } = useParams<{ roomId: string }>()
   const [name, setName] = useState(generateRandomName)
-  const [character, setCharacter] = useState(() => getFirstAvailable([]))
+  const [character, setCharacter] = useState(shuffled[0])
   const [joined, setJoined] = useState(false)
   const [error, setError] = useState<string | null>(null)
   const [checking, setChecking] = useState(true)
@@ -41,7 +43,7 @@ export function RaceJoinPage() {
     if (!room || joined) return
     const taken = Object.values(room.players ?? {}).map((p) => p.character)
     if (taken.includes(character)) {
-      setCharacter(getFirstAvailable(taken))
+      setCharacter(getFirstAvailable(shuffled, taken))
     }
   }, [room, joined, character])
 
@@ -116,6 +118,7 @@ export function RaceJoinPage() {
         </div>
 
         <CharacterPicker
+          characters={shuffled}
           selected={character}
           onSelect={setCharacter}
           players={room?.players}

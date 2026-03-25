@@ -1,28 +1,16 @@
-import { useMemo } from 'react'
-import { CHARACTERS } from '../lib/characters'
 import type { Player } from '../types'
 
 interface Props {
+  characters: readonly string[]
   selected: string
   onSelect: (char: string) => void
   players?: Record<string, Player>
 }
 
-export function CharacterPicker({ selected, onSelect, players }: Props) {
+export function CharacterPicker({ characters, selected, onSelect, players }: Props) {
   const takenCharacters = new Set(
     Object.values(players ?? {}).map((p) => p.character)
   )
-
-  const shuffled = useMemo(() => {
-    const arr = [...CHARACTERS]
-    for (let i = arr.length - 1; i > 0; i--) {
-      const j = Math.floor(Math.random() * (i + 1))
-      const tmp = arr[i]
-      arr[i] = arr[j]
-      arr[j] = tmp
-    }
-    return arr
-  }, [])
 
   return (
     <div
@@ -33,7 +21,7 @@ export function CharacterPicker({ selected, onSelect, players }: Props) {
         margin: '16px 0',
       }}
     >
-      {shuffled.map((char) => {
+      {characters.map((char) => {
         const isTaken = takenCharacters.has(char) && char !== selected
         return (
           <button

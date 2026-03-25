@@ -11,14 +11,16 @@ import { CountdownOverlay } from '../../components/CountdownOverlay'
 import { RaceTrack } from '../../components/race/RaceTrack'
 import { RaceResult } from '../../components/race/RaceResult'
 import { CharacterPicker } from '../../components/CharacterPicker'
-import { CHARACTERS } from '../../lib/characters'
+import { shuffleCharacters } from '../../lib/characters'
+
+const shuffled = shuffleCharacters()
 
 export function RaceLobbyPage() {
   const [roomId, setRoomId] = useState<string | null>(null)
   const [creating, setCreating] = useState(false)
   const [hostJoined, setHostJoined] = useState(false)
   const [hostName, setHostName] = useState(generateRandomName)
-  const [hostChar, setHostChar] = useState(CHARACTERS[0])
+  const [hostChar, setHostChar] = useState(shuffled[0])
   const { room } = useRoom(roomId ?? undefined)
   const raceRoom = room?.gameType === 'race' ? room : null
   const { startRace } = useRace(roomId ?? '', raceRoom)
@@ -132,7 +134,7 @@ export function RaceLobbyPage() {
           🎲
         </button>
         </div>
-        <CharacterPicker selected={hostChar} onSelect={setHostChar} />
+        <CharacterPicker characters={shuffled} selected={hostChar} onSelect={setHostChar} />
         <motion.button
           whileTap={{ scale: 0.95 }}
           onClick={handleHostJoin}

@@ -10,15 +10,17 @@ import { PlayerAvatar } from '../../components/PlayerAvatar'
 import { LadderBoard } from '../../components/ladder/LadderBoard'
 import { LadderResultPanel } from '../../components/ladder/LadderResultPanel'
 import { CharacterPicker } from '../../components/CharacterPicker'
-import { CHARACTERS } from '../../lib/characters'
+import { shuffleCharacters } from '../../lib/characters'
 import { getStoredPlayerId, toStringArray } from '../../lib/room'
+
+const shuffled = shuffleCharacters()
 
 export function LadderLobbyPage() {
   const [roomId, setRoomId] = useState<string | null>(null)
   const [creating, setCreating] = useState(false)
   const [hostJoined, setHostJoined] = useState(false)
   const [hostName, setHostName] = useState(generateRandomName)
-  const [hostChar, setHostChar] = useState(CHARACTERS[0])
+  const [hostChar, setHostChar] = useState(shuffled[0])
   const [loserCount, setLoserCount] = useState(1)
   const { room } = useRoom(roomId ?? undefined)
   const { startLadder, triggerPlayer, markFinished, resetGame } = useLadder(roomId ?? '', room)
@@ -140,7 +142,7 @@ export function LadderLobbyPage() {
           🎲
         </button>
         </div>
-        <CharacterPicker selected={hostChar} onSelect={setHostChar} />
+        <CharacterPicker characters={shuffled} selected={hostChar} onSelect={setHostChar} />
         <motion.button
           whileTap={{ scale: 0.95 }}
           onClick={handleHostJoin}
